@@ -1,6 +1,6 @@
 from sys import path
 path.extend(['da_classifier','WNAffect','Personality_recognizer','Natural_language_generation','parser'])
-import pickle,os,time
+import pickle,os,time,datetime
 from operator import itemgetter
 import subprocess
 import nltk
@@ -54,6 +54,7 @@ class ChatInstance(object):
                                     'da': None, 'topic': None}]
                                     
         self.log_out = open('LOG_' + time.strftime('%H_%M_%S') +'.csv', 'a')
+        self.log_out.write('time,actor,utterance,da,emotion,personality,topic\n')
 
         
     def get_emotion(self,utterance):
@@ -212,7 +213,16 @@ class ChatInstance(object):
         self.get_features(input_str)
         
         #Log input
-        self.log_out.write(input_str)
+        entry = '{},{},{},{},{},{},{}\n'.format(
+            datetime.time,
+            self.prev_conversation[-1]['actor'],
+            self.prev_conversation[-1]['utterance'],
+            self.prev_conversation[-1]['da'],
+            self.prev_conversation[-1]['emotions'],
+            '/'.join('{}'.format(e) for e in self.prev_conversation[-1]['personality']), #format instead of str() to handle Nonetype
+            self.prev_conversation[-1]['topic'])
+            
+        self.log_out.write(entry)
         
         #Retrieve user input features from prev_conversation[-1] to pass to interface
         da = self.prev_conversation[-1]['da']
@@ -229,10 +239,19 @@ class ChatInstance(object):
         #Add to queue, 'actor' = 'bot'. If the emotions, personality or topic from the bot are useful to someone can add them here.
         bot_da = self.get_da(output_str, 'bot')
         if len(self.prev_conversation) == 20: self.prev_conversation.pop(0)
-        self.prev_conversation.append({'actor': 'bot', 'utterance': output_str, 'da': bot_da})
+        self.prev_conversation.append({'actor': 'bot', 'utterance': output_str, 'emotions': None, 'personality': [None,None,None,None,None], 'da': bot_da, 'topic': None})
         
         #Log output
-        self.log_out.write(output_str)
+        entry = '{},{},{},{},{},{},{}\n'.format(
+            datetime.time,
+            self.prev_conversation[-1]['actor'],
+            self.prev_conversation[-1]['utterance'],
+            self.prev_conversation[-1]['da'],
+            self.prev_conversation[-1]['emotions'],
+            '/'.join('{}'.format(e) for e in self.prev_conversation[-1]['personality']), #format instead of str() to handle Nonetype
+            self.prev_conversation[-1]['topic'])
+            
+        self.log_out.write(entry)
         
         return output_str
 

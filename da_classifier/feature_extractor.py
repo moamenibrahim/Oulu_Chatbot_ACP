@@ -29,7 +29,7 @@ class feature_extractor(object):
             except IndexError:
                 features['word'+str(i+1)+'_pos_tag'] = ''
                 
-        if is_previous_speaker: #previous speaker
+        if is_previous_speaker != None: #previous speaker
             features['is_previous_speaker'] = is_previous_speaker
         else:
             features['is_previous_speaker'] = ''
@@ -62,6 +62,7 @@ class feature_extractor(object):
     def create_featuresets(self, max_transcripts = 20, n = 9):
         corpus = swda.CorpusReader('swda')
         utterances = []
+        
         i = 1
         
         for trans in corpus.iter_transcripts(display_progress = True):
@@ -70,7 +71,7 @@ class feature_extractor(object):
             previous_tag = None
             previous_caller = None
             for utt in trans.utterances:
-                if utt.act_tag not in ('x', 't3', '%'): #discard non-verbal, uninterpretable and third-party talk da:s
+                if utt.act_tag not in ('x', 't3', '%', '+'): #discard non-verbal, uninterpretable and third-party talk da:s as well as continued sentences
                     try:
                         previous_tag = utterances[-1][1]
                         previous_caller = utterances[-1][2]
