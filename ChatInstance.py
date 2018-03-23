@@ -52,9 +52,9 @@ class ChatInstance(object):
         self.prev_conversation = [{'actor': 'user', 'utterance': None,
                                     'emotions': None, 'personality': [None,None,None,None,None],
                                     'da': None, 'topic': None}]
-                                    
-        self.log_out = open('LOG_' + time.strftime('%H_%M_%S') +'.csv', 'a')
-        self.log_out.write('time,actor,utterance,da,emotion,personality,topic\n')
+        self.log_out = 'LOG_' + time.strftime('%H_%M_%S') +'.txt'
+        with open(self.log_out,'w') as f:
+            f.write('time,actor,utterance,da,emotion,personality,topic\n')
 
         
     def get_emotion(self,utterance):
@@ -70,7 +70,6 @@ class ChatInstance(object):
            
         if (negative > positive):
             emotions = "negative emotion"
-        
         return emotions
         
     def get_personality(self, utterance):
@@ -211,47 +210,47 @@ class ChatInstance(object):
         """ ADD FEATURES TO HERE AS WELL!!!"""
         
         self.get_features(input_str)
-        
-        #Log input
-        entry = '{},{},{},{},{},{},{}\n'.format(
-            datetime.time,
-            self.prev_conversation[-1]['actor'],
-            self.prev_conversation[-1]['utterance'],
-            self.prev_conversation[-1]['da'],
-            self.prev_conversation[-1]['emotions'],
-            '/'.join('{}'.format(e) for e in self.prev_conversation[-1]['personality']), #format instead of str() to handle Nonetype
-            self.prev_conversation[-1]['topic'])
+        with open(self.log_out,'a') as f:
+            #Log input
+            entry = '{},{},{},{},{},{},{}\n'.format(
+                time.strftime('%H_%M_%S'),
+                self.prev_conversation[-1]['actor'],
+                self.prev_conversation[-1]['utterance'],
+                self.prev_conversation[-1]['da'],
+                self.prev_conversation[-1]['emotions'],
+                '/'.join('{}'.format(e) for e in self.prev_conversation[-1]['personality']), #format instead of str() to handle Nonetype
+                self.prev_conversation[-1]['topic'])
+                
+            f.write(entry)
             
-        self.log_out.write(entry)
-        
-        #Retrieve user input features from prev_conversation[-1] to pass to interface
-        da = self.prev_conversation[-1]['da']
-        emotions = self.prev_conversation[-1]['emotions']
-        personality = self.prev_conversation[-1]['personality']
-        topic = self.prev_conversation[-1]['topic']
-        
-        #Get NN outputs
-        nn_outputs = self.get_NN_output(input_str)
-        
-        #Select best ones
-        output_str = self.select_best(nn_outputs)
-        
-        #Add to queue, 'actor' = 'bot'. If the emotions, personality or topic from the bot are useful to someone can add them here.
-        bot_da = self.get_da(output_str, 'bot')
-        if len(self.prev_conversation) == 20: self.prev_conversation.pop(0)
-        self.prev_conversation.append({'actor': 'bot', 'utterance': output_str, 'emotions': None, 'personality': [None,None,None,None,None], 'da': bot_da, 'topic': None})
-        
-        #Log output
-        entry = '{},{},{},{},{},{},{}\n'.format(
-            datetime.time,
-            self.prev_conversation[-1]['actor'],
-            self.prev_conversation[-1]['utterance'],
-            self.prev_conversation[-1]['da'],
-            self.prev_conversation[-1]['emotions'],
-            '/'.join('{}'.format(e) for e in self.prev_conversation[-1]['personality']), #format instead of str() to handle Nonetype
-            self.prev_conversation[-1]['topic'])
+            #Retrieve user input features from prev_conversation[-1] to pass to interface
+            da = self.prev_conversation[-1]['da']
+            emotions = self.prev_conversation[-1]['emotions']
+            personality = self.prev_conversation[-1]['personality']
+            topic = self.prev_conversation[-1]['topic']
             
-        self.log_out.write(entry)
+            #Get NN outputs
+            nn_outputs = self.get_NN_output(input_str)
+            
+            #Select best ones
+            output_str = self.select_best(nn_outputs)
+            
+            #Add to queue, 'actor' = 'bot'. If the emotions, personality or topic from the bot are useful to someone can add them here.
+            bot_da = self.get_da(output_str, 'bot')
+            if len(self.prev_conversation) == 20: self.prev_conversation.pop(0)
+            self.prev_conversation.append({'actor': 'bot', 'utterance': output_str, 'emotions': None, 'personality': [None,None,None,None,None], 'da': bot_da, 'topic': None})
+            
+            #Log output
+            entry = '{},{},{},{},{},{},{}\n'.format(
+                time.strftime('%H_%M_%S'),
+                self.prev_conversation[-1]['actor'],
+                self.prev_conversation[-1]['utterance'],
+                self.prev_conversation[-1]['da'],
+                self.prev_conversation[-1]['emotions'],
+                '/'.join('{}'.format(e) for e in self.prev_conversation[-1]['personality']), #format instead of str() to handle Nonetype
+                self.prev_conversation[-1]['topic'])
+                
+            f.write(entry)
         
         return output_str
 
