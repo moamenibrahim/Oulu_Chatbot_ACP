@@ -26,6 +26,8 @@ from NN_instance import NN_instance
 
 class ChatInstance(object):
     def __init__(self,nn_model_dir):
+        self.counter = 0
+    
         #dialog act classifier
         with open('da_classifier\\logisticregression.pickle', 'rb') as f:
             self.da_classifier = pickle.load(f)
@@ -50,7 +52,7 @@ class ChatInstance(object):
         #logging and 20 slot queue of previous conversation (list of dictionaries {'actor', 'utterance', 'emotions', 'personality', 'da', 'topic'})
         #do different emotions and personality need to be marked separately?
         self.prev_conversation = [{'actor': 'user', 'utterance': None,
-                                    'emotions': None, 'personality': [None,None,None,None,None],
+                                    'emotions': None, 'personality': [0,0,0,0,0],
                                     'da': None, 'topic': None}]
         self.log_out = 'LOG_' + time.strftime('%H_%M_%S') +'.txt'
         with open(self.log_out,'w') as f:
@@ -71,6 +73,7 @@ class ChatInstance(object):
         if (negative > positive):
             emotions = "negative emotion"
         return emotions
+        return None
         
     def get_personality(self, utterance):
         """Get personality traits"""
@@ -197,8 +200,15 @@ class ChatInstance(object):
         """CALL EACH FEATURE METHOD HERE AND ASSIGN TO SELF OR SOMEWHERE"""
         da = self.get_da(input_str, 'user')
         emotions = self.get_emotion(input_str)
-        personality = self.get_personality(input_str)
         topic = self.get_topic(input_str)
+        new_personality = self.get_personality(input_str)
+        try:
+            personality = self.prev_conversation[-2]['personality']
+        except IndexError:
+            personality = [0,0,0,0,0]
+        for i, value in enumerate(personality):
+            personality[i] = (value*self.counter + float(new_personality[i][0])) / (self.counter + 1)
+                
         
         #Add to queue, 'actor' = 'user'
         if len(self.prev_conversation) == 20: self.prev_conversation.pop(0)
@@ -210,6 +220,7 @@ class ChatInstance(object):
         """ ADD FEATURES TO HERE AS WELL!!!"""
         
         self.get_features(input_str)
+        self.counter += 1
         with open(self.log_out,'a') as f:
             #Log input
             entry = '{},{},{},{},{},{},{}\n'.format(
